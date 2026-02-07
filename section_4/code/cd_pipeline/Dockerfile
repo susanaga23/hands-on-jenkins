@@ -1,19 +1,22 @@
-# base image
-FROM alpine:3.7
+FROM alpine:3.19
 
-# Install python 3 and pip
-RUN apk add --update python3
+WORKDIR /usr/src/app
 
-# Install Python modules needed by the Python app
-COPY requirements.txt /usr/src/app/
-RUN pip3 install --no-cache-dir -r /usr/src/app/requirements.txt
+# Python + pip + venv
+RUN apk add --no-cache python3 py3-pip py3-virtualenv
 
-# Copy files required for the app to run
-COPY app.py /usr/src/app/
-COPY templates/index.html /usr/src/app/templates/
+# Crea venv e instala deps ahí
+COPY requirements.txt .
+RUN python3 -m venv /opt/venv \
+ && /opt/venv/bin/pip install --upgrade pip setuptools wheel \
+ && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# Tell the port number the container should expose
+# Usa el venv por defecto
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY app.py .
+COPY templates/index.html ./templates/
+
 EXPOSE 5000
+CMD ["python", "app.py"]
 
-# Run the application
-CMD ["python3", "/usr/src/app/app.py"]
